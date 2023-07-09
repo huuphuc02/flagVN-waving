@@ -1,12 +1,10 @@
 
 import * as THREE from 'three';
 
-import { ParametricGeometry } from './three_r148/ParametricGeometry.js';
 import Stats from './three_r148/stats.module.js';
 import { OrbitControls } from './three_r148/OrbitControls.js';
 
 import{ WindyCloth } from './WindyCloth.js';
-
 
 class Main {
 
@@ -46,10 +44,19 @@ class Main {
         this.container.setAttribute('id', 'main_view');
         document.body.appendChild(this.container);
 
+        const flagBackgroundInput = document.getElementById('flagBackground');
+        flagBackgroundInput.addEventListener('change', this.handleFlagBackgroundChange.bind(this));
+
+        const skyBackgroundInput = document.getElementById('skyBackground');
+        skyBackgroundInput.addEventListener('change', this.handleSkyBackgroundChange.bind(this));
+
+        const groundInput = document.getElementById('ground');
+        groundInput.addEventListener('change', this.handleGroundTextureChange.bind(this));
+
        // scene
         this.scene = new THREE.Scene();
         // this.scene.background = new THREE.Color(0x07074d);
-        this.scene.fog = new THREE.Fog(0x4adf94, 50, 15000);
+     //   this.scene.fog = new THREE.Fog(0x4adf94, 50, 15000);
         const loader = new THREE.TextureLoader();
         
         const backgroundTexture = loader.load('textures/sky.webp');
@@ -81,22 +88,11 @@ class Main {
         this.scene.add(light);
 
         // Nguồn sáng thứ hai
-        const light2 = new THREE.DirectionalLight(0xdfebff, 1);
+        const light2 = new THREE.SpotLight(0xdfebff, 1);
         light2.position.set(150, -550, -1000);
         light2.position.multiplyScalar(1.3);
-        light2.castShadow = true;
-        light2.shadow.mapSize.width = 1024;
-        light2.shadow.mapSize.height = 1024;
 
-        // Cấu hình camera chiếu bóng cho nguồn sáng thứ hai
-        const d2 = 2000;
-        light2.shadow.camera.left = -d2;
-        light2.shadow.camera.right = d2;
-        light2.shadow.camera.top = d2;
-        light2.shadow.camera.bottom = -d2;
-        light2.shadow.camera.far = 4000;
-
-     //   this.scene.add(light2);
+        this.scene.add(light2);
 
         // START FLAG
         // cloth material
@@ -110,7 +106,7 @@ class Main {
             side: THREE.DoubleSide,//hiển thị cả phía trước và phía sau
             alphaTest: 0,// loại bỏ các pixel có giá trị alpha thấp
         });
-
+ 
 
         // cloth mesh
         this.flagMesh = new THREE.Mesh(this.cloth.geometry, clothMaterial);
@@ -141,6 +137,7 @@ class Main {
         mesh.position.y = -250;
         mesh.rotation.x = -Math.PI / 2;
         mesh.receiveShadow = true;
+        mesh.name = 'groundMesh';
 
         this.scene.add(mesh);
 
@@ -194,6 +191,70 @@ class Main {
 
         this.animate(0);
     }
+    
+        // Handle flag background change event
+    static handleFlagBackgroundChange(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const flagBackgroundUrl = e.target.result;
+                this.updateFlagBackgroundTexture(flagBackgroundUrl);
+            };
+            reader.readAsDataURL(file);
+    }
+
+    static handleSkyBackgroundChange(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const skyBackgroundUrl = e.target.result;
+            this.updateSkyBackgroundTexture(skyBackgroundUrl);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    static handleGroundTextureChange(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const groundTextureUrl = e.target.result;
+            this.updateGroundTexture(groundTextureUrl);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    static async updateFlagBackgroundTexture(url) {
+        const loader = new THREE.TextureLoader();
+        const flagBackgroundTexture = await loader.loadAsync(url);
+        flagBackgroundTexture.wrapS = THREE.RepeatWrapping;
+        flagBackgroundTexture.wrapT = THREE.RepeatWrapping;
+        flagBackgroundTexture.repeat.set(1, 1);
+        this.flagMesh.material.map = flagBackgroundTexture;
+        this.flagMesh.material.needsUpdate = true;
+    }
+    
+    static updateSkyBackgroundTexture(url) {
+        const loader = new THREE.TextureLoader();
+        const backgroundTexture = loader.load(url);
+        this.scene.background = backgroundTexture;
+        this.render();
+    }
+    
+    static updateGroundTexture(url) {
+        const loader = new THREE.TextureLoader();
+        const groundTexture = loader.load(url);
+        groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(25, 25);
+        groundTexture.anisotropy = 16;
+        groundTexture.encoding = THREE.sRGBEncoding;
+    
+        const groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
+        const groundMesh = this.scene.getObjectByName('groundMesh');
+        groundMesh.material = groundMaterial;
+    
+        this.render();
+    }
+    
     static animate(now) {
         const speedRange = document.getElementById('speedRange');
         speedRange.addEventListener('input', () => {
