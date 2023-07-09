@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Flag Simulation</title>
+        <meta charset="utf-8">
+        <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link href="css/main.css" rel="stylesheet" type="text/css"/>
+    </head>
+    <body>
+        <script type="importmap">
+            {
+            "imports": {
+            "three": "./js/three_r148/three.module.js"
+            }
+            }
+        </script>
+        <script type="module">
+            import{ Main } from './js/Main.js';
+            // init is a static 
+            Main.init();
+        </script>
+        <input type="range" id="speedRange" min="0" max="500" value="100">
+    </body>
+</html>
